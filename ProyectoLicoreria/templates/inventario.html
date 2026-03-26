@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Inventario - Licorería{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>📦 Inventario</h1>
+  <p>Total de productos: <strong style="color:#c9a84c">{{ total }}</strong></p>
+</div>
+
+<div class="form-card" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem; border: 1px solid rgba(201, 168, 76, 0.3);">
+  <h5 style="color: #c9a84c; margin-bottom: 1rem;">⬇️ Exportar Datos (Persistencia)</h5>
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <a href="{{ url_for('exportar_json') }}" class="btn btn-sm"
+      style="border: 1px solid #ffc107; color: #ffc107;">Exportar JSON</a>
+    <a href="{{ url_for('exportar_csv') }}" class="btn btn-sm"
+      style="border: 1px solid #198754; color: #198754;">Exportar CSV</a>
+    <a href="{{ url_for('exportar_txt') }}" class="btn btn-sm"
+      style="border: 1px solid #0dcaf0; color: #0dcaf0;">Exportar TXT</a>
+  </div>
+</div>
+
+<div class="card bg-dark text-white border-secondary mt-4">
+  <div class="card-header bg-black">
+    <h5 class="text-warning mb-0"><i class="bi bi-cloud-arrow-up"></i> Importar Datos a SQLite</h5>
+  </div>
+  <div class="card-body">
+
+    <div class="mt-3 p-3 border border-secondary rounded bg-black">
+      <h6 class="text-warning">📥 Importar desde Archivo (JSON a BD)</h6>
+      <form action="{{ url_for('importar_json') }}" method="POST" enctype="multipart/form-data" class="row g-2">
+        <div class="col-auto">
+          <input type="file" name="archivo_json" class="form-control form-control-sm bg-dark text-white border-warning"
+            accept=".json" required>
+        </div> <br>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-sm btn-warning">Cargar en Base de Datos</button>
+        </div>
+      </form>
+    </div>
+
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <form action="{{ url_for('importar_csv') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+          <input type="file" name="archivo_csv" class="form-control form-control-sm bg-dark text-white border-success"
+            accept=".csv" required>
+          <button type="submit" class="btn btn-sm btn-success">Cargar CSV</button>
+        </form>
+      </div>
+      <div class="col-md-6 mb-3">
+        <form action="{{ url_for('importar_txt') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+          <input type="file" name="archivo_txt" class="form-control form-control-sm bg-dark text-white border-info"
+            accept=".txt" required>
+          <button type="submit" class="btn btn-sm btn-info text-white">Cargar TXT</button>
+        </form>
+      </div>
+    </div>
+    <small class="text-muted italic">Nota: El TXT debe estar separado por comas (Nombre, Categoría, Marca, Precio,
+      Stock).</small>
+  </div>
+</div>
+
+<div class="form-card" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
+  <form method="POST" style="display:flex; gap:1rem; align-items:flex-end;">
+    {{ form.hidden_tag() }}
+    <div class="form-group" style="flex:1; margin:0;">
+      {{ form.busqueda.label }}
+      {{ form.busqueda(class="form-control", placeholder="Buscar por nombre o marca...") }}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+    <a href="{{ url_for('inventario') }}" class="btn">Limpiar</a>
+  </form>
+</div>
+
+<div class="table-container">
+  {% if productos %}
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Categoría</th>
+        <th>Marca</th>
+        <th>Precio</th>
+        <th>Stock</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in productos %}
+      <tr>
+        <td>{{ p.id }}</td>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.categoria }}</td>
+        <td>{{ p.marca }}</td>
+        <td>${{ "%.2f"|format(p.precio) }}</td>
+        <td>{{ p.stock }}</td>
+        <td>
+          <span class="badge badge-{{ 'danger' if p.estado == 'Agotado' 
+                                else 'warning' if p.estado == 'Bajo' 
+                                else 'success' }}">
+            {{ p.estado }}
+          </span>
+        </td>
+        <td class="acciones">
+          <a href="{{ url_for('editar', id=p.id) }}" class="btn btn-sm">✏️ Editar</a>
+            <a href="{{ url_for('eliminar', id=p.id) }}" class="btn btn-sm btn-danger"
+              onclick="return confirm('¿Estás seguro de que deseas eliminar este producto?')">
+              <i class="bi bi-trash"></i>🗑️ Eliminar
+            </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-msg">No hay productos registrados.
+    <a href="{{ url_for('productos') }}" style="color:#c9a84c">Agregar uno</a>
+  </p>
+  {% endif %}
+</div>
+
+<div style="margin-top:1.5rem;">
+  <a href="{{ url_for('productos') }}" class="btn btn-primary">+ Agregar Producto</a>
+</div>
+{% endblock %}

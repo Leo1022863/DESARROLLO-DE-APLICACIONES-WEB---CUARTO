@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Reportes - Licorería{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>📊 Reportes</h1>
+  <p>{{ info.nombre }} — {{ info.ciudad }}</p>
+</div>
+
+<!-- Tarjetas resumen (diccionario) -->
+<div class="cards-grid" style="margin-bottom:2rem;">
+  <div class="card">
+    <div class="card-icon">📦</div>
+    <h3>Total Productos</h3>
+    <p style="font-size:2rem; color:#c9a84c; margin:0">{{ resumen.total_productos }}</p>
+  </div>
+  <div class="card">
+    <div class="card-icon">💰</div>
+    <h3>Precio Promedio</h3>
+    <p style="font-size:2rem; color:#c9a84c; margin:0">${{ resumen.precio_promedio }}</p>
+  </div>
+  <div class="card">
+    <div class="card-icon">📈</div>
+    <h3>Stock Total</h3>
+    <p style="font-size:2rem; color:#c9a84c; margin:0">{{ resumen.stock_total }}</p>
+  </div>
+</div>
+
+<!-- Alertas (listas) -->
+{% if resumen.productos_agotados %}
+<div class="alert alert-danger" style="margin-bottom:1rem;">
+  🚨 Productos agotados: {{ resumen.productos_agotados | join(', ') }}
+</div>
+{% endif %}
+
+{% if resumen.productos_bajos %}
+<div class="alert alert-warning" style="margin-bottom:1.5rem;">
+  ⚠️ Stock bajo: {{ resumen.productos_bajos | join(', ') }}
+</div>
+{% endif %}
+
+<!-- Agrupado por categoría (diccionario + listas) -->
+<div class="table-container">
+  {% if agrupado %}
+    {% for categoria, productos in agrupado.items() %}
+    <h3 style="color:#c9a84c; margin-bottom:0.8rem;">🍷 {{ categoria }}</h3>
+    <table class="tabla" style="margin-bottom:1.5rem;">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Marca</th>
+          <th>Precio</th>
+          <th>Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td>{{ p.nombre }}</td>
+          <td>{{ p.marca }}</td>
+          <td>${{ "%.2f"|format(p.precio) }}</td>
+          <td>{{ p.stock }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+  {% else %}
+    <p class="empty-msg">No hay productos registrados aún.</p>
+  {% endif %}
+</div>
+
+<!-- Conjuntos: categorías y marcas en uso -->
+<div class="form-row" style="margin-top:1.5rem; gap:1rem;">
+  <div class="form-card">
+    <h3 style="color:#c9a84c; margin-bottom:1rem;">📂 Categorías en uso</h3>
+    {% for cat in resumen.categorias_en_uso %}
+      <span class="badge badge-success" style="margin:4px;">{{ cat }}</span>
+    {% endfor %}
+  </div>
+  <div class="form-card">
+    <h3 style="color:#c9a84c; margin-bottom:1rem;">🏷️ Marcas en uso</h3>
+    {% for marca in resumen.marcas_en_uso %}
+      <span class="badge badge-warning" style="margin:4px;">{{ marca }}</span>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

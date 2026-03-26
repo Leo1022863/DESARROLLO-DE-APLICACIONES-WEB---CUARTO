@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+<div class="container mt-4">
+    <div class="page-header border-bottom border-warning mb-4 pb-2">
+        <h1 style="color: #c9a84c;">📂 Persistencia Local de Datos</h1>
+        <p class="text-muted">Visualización de archivos generados físicamente en el servidor.</p>
+    </div>
+
+    
+    <div class="accordion" id="accordionPersistencia">
+        
+        <div class="accordion-item bg-dark text-white border-secondary">
+            <h2 class="accordion-header">
+                <button class="accordion-button bg-dark text-warning collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                    📄 Vista de Archivo JSON (Estructurado)
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionPersistencia">
+                <div class="accordion-body">
+                    {% if json_obj %}
+                        <p class="small text-muted">Exportado el: {{ json_obj.fecha_exportacion }}</p>
+                        <table class="table table-dark table-hover table-bordered border-secondary">
+                            <thead class="table-secondary text-dark">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Marca</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prod in json_obj.productos %}
+                                <tr>
+                                    <td>{{ prod.nombre }}</td>
+                                    <td>{{ prod.marca }}</td>
+                                    <td>{{ prod.categoria }}</td>
+                                    <td class="text-warning">${{ prod.precio }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-warning">No hay datos JSON guardados. Ve a Inventario y exporta uno.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item bg-dark text-white border-secondary">
+            <h2 class="accordion-header">
+                <button class="accordion-button bg-dark text-warning collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                    📝 Vista de Archivo TXT (Plano)
+                </button>
+            </h2>
+            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionPersistencia">
+                <div class="accordion-body">
+                    {% if txt_data %}
+                        <pre class="p-3 border border-warning rounded" style="background-color: #1a1a1a; color: #c9a84c; font-family: 'Courier New', monospace;">{{ txt_data }}</pre>
+                    {% else %}
+                        <p class="text-muted">No se ha generado el reporte de texto todavía.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('inventario') }}" class="btn btn-outline-warning">
+            <i class="bi bi-arrow-left"></i> Volver al Inventario
+        </a>
+    </div>
+</div>
+{% endblock %}

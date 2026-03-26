@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Licorería - Inventario{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <!-- ENCABEZADO / NAVBAR -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            🍷 <span>Licorería</span> Inventario
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('inicio') }}"
+                    class="{{ 'active' if request.endpoint == 'inicio' }}">Inicio</a></li>
+            <li><a href="{{ url_for('clientes') }}"
+                    class="{{ 'active' if request.endpoint == 'clientes' }}">Clientes</a></li>  ← aquí
+            <li><a href="{{ url_for('inventario') }}"
+                    class="{{ 'active' if request.endpoint == 'inventario' }}">Inventario</a></li>
+            <li><a href="{{ url_for('productos') }}"
+                    class="{{ 'active' if request.endpoint == 'productos' }}">Productos</a></li>
+            <li><a href="{{ url_for('reportes') }}"
+                    class="{{ 'active' if request.endpoint == 'reportes' }}">Reportes</a></li>
+            <li><a href="{{ url_for('about') }}"
+                    class="{{ 'active' if request.endpoint == 'about' }}">Acerca de</a></li>
+
+            <!--LISTA DE PERSISTENCIA EXPORTA JSON, CSV, TXT -->
+            <li><a href="{{ url_for('ver_datos') }}" 
+                    class="{{ 'active' if request.endpoint == 'ver_datos' }}">Persistencia</a></li>        
+            
+        </ul>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="container">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+    </main>
+
+    <!-- PIE DE PÁGINA -->
+    <footer>
+        <p>&copy; 2025 Licorería &mdash; Sistema de Inventario</p>
+    </footer>
+
+</body>
+
+</html>

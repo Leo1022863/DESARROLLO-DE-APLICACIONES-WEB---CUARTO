@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Clientes - Licorería{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>👥 Clientes</h1>
+  <p>Total registrados: <strong style="color:#c9a84c">{{ total }}</strong></p>
+</div>
+
+<div style="margin-bottom:1.5rem;">
+  <a href="{{ url_for('agregar_cliente') }}" class="btn btn-primary">+ Agregar Cliente</a>
+</div>
+
+<div class="table-container">
+  {% if clientes %}
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Cédula</th>
+        <th>Teléfono</th>
+        <th>Email</th>
+        <th>Dirección</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in clientes %}
+      <tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.get_nombre() }}</td>
+        <td>{{ c.get_cedula() }}</td>
+        <td>{{ c.get_telefono() or '-' }}</td>
+        <td>{{ c.get_email() or '-' }}</td>
+        <td>{{ c.direccion or '-' }}</td>
+        <td class="acciones">
+          <a href="{{ url_for('editar_cliente', id=c.id) }}" class="btn btn-sm">✏️ Editar</a>
+          <a href="{{ url_for('eliminar_cliente', id=c.id) }}" class="btn btn-sm btn-danger"
+             onclick="return confirm('¿Eliminar este cliente?')">🗑️ Eliminar</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="empty-msg">No hay clientes registrados.
+      <a href="{{ url_for('agregar_cliente') }}" style="color:#c9a84c">Agregar uno</a>
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - Licorería{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Bienvenido al Sistema de Inventario</h1>
+  <p>Gestiona tu licorería de forma fácil y rápida</p>
+</div>
+
+<div class="cards-grid">
+  <div class="card">
+    <div class="card-icon">📦</div>
+    <h3>Inventario</h3>
+    <p>Controla el stock de tus productos</p>
+    <a href="{{ url_for('inventario') }}" class="btn">Ver Inventario</a>
+  </div>
+
+  <div class="card">
+    <div class="card-icon">🍷</div>
+    <h3>Productos</h3>
+    <p>Administra tu catálogo de productos</p>
+    <a href="{{ url_for('productos') }}" class="btn">Ver Productos</a>
+  </div>
+
+  <div class="card">
+    <div class="card-icon">📊</div>
+    <h3>Reportes</h3>
+    <p>Visualiza estadísticas de tu negocio</p>
+    <a href="{{ url_for('reportes') }}" class="btn">Ver Reportes</a>
+  </div>
+</div>
+{% endblock %}

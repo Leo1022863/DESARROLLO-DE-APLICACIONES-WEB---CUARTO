@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Editar Producto - Licorería{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>✏️ Editar Producto</h1>
+  <p>Modificando: <strong style="color:#c9a84c">{{ producto.nombre }}</strong></p>
+</div>
+
+<div class="form-card">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="form-group">
+      {{ form.nombre.label }}
+      {{ form.nombre(class="form-control") }}
+      {% for error in form.nombre.errors %}
+        <span class="error">⚠ {{ error }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.categoria.label }}
+      {{ form.categoria(class="form-control") }}
+      {% for error in form.categoria.errors %}
+        <span class="error">⚠ {{ error }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.marca.label }}
+      {{ form.marca(class="form-control") }}
+      {% for error in form.marca.errors %}
+        <span class="error">⚠ {{ error }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        {{ form.precio.label }}
+        {{ form.precio(class="form-control") }}
+        {% for error in form.precio.errors %}
+          <span class="error">⚠ {{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.stock.label }}
+        {{ form.stock(class="form-control") }}
+        {% for error in form.stock.errors %}
+          <span class="error">⚠ {{ error }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      {{ form.submit(class="btn btn-primary") }}
+      <a href="{{ url_for('inventario') }}" class="btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
