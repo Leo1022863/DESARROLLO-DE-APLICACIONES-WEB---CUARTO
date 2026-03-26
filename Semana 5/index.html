@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería Interactiva</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="script.js"></script>
+        
+</head>
+<body>
+    <div class="container">
+        <h1>Galería Interactiva</h1>
+        
+        <div class="controls">
+            <input 
+                type="url" 
+                id="urlInput" 
+                placeholder="Ingresa la URL de una imagen..."
+                aria-label="URL de imagen"
+            >
+            <button id="addBtn">➕ Agregar Imagen</button>
+            <button id="deleteBtn" disabled>🗑️ Eliminar Seleccionada</button>
+        </div>
+
+        <div class="info">
+            <strong>Tip:</strong> Haz clic en una imagen para seleccionarla | Presiona <kbd>Delete</kbd> o <kbd>Backspace</kbd> para eliminar
+        </div>
+
+        <div id="gallery">
+            <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3>No hay imágenes en la galería</h3>
+                <p>Agrega una URL de imagen para comenzar</p>
+            </div>
+        </div>
+
+        <div class="shortcuts">
+            <h3>⌨️ Atajos de Teclado</h3>
+            <ul>
+                <li><kbd>Enter</kbd> - Agregar imagen desde el campo de URL</li>
+                <li><kbd>Delete</kbd> o <kbd>Backspace</kbd> - Eliminar imagen seleccionada</li>
+                <li><kbd>Escape</kbd> - Deseleccionar imagen actual</li>
+            </ul>
+        </div>
+    </div>
+
+    
+</body>
+</html>

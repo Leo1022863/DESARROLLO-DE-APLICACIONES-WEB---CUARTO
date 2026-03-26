@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Formulario de Registro</h1>
+        
+        <form id="registroForm">
+            <div class="form-group">
+                <label for="nombre">Nombre completo *</label>
+                <input type="text" id="nombre" placeholder="Ingresa tu nombre">
+                <span class="error-message" id="errorNombre">El nombre debe tener al menos 3 caracteres</span>
+                <span class="success-message" id="successNombre">Nombre válido</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Correo electrónico *</label>
+                <input type="email" id="email" placeholder="ejemplo@correo.com">
+                <span class="error-message" id="errorEmail">Ingresa un correo electrónico válido</span>
+                <span class="success-message" id="successEmail">Correo válido</span>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña *</label>
+                <input type="password" id="password" placeholder="Crea una contraseña segura">
+                <div class="password-requirements">
+                    Incluir al menos un número, carácter especial y 8 digitos
+                </div>
+                <span class="error-message" id="errorPassword">La contraseña no cumple los requisitos</span>
+                <span class="success-message" id="successPassword">Contraseña segura</span>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirmar contraseña *</label>
+                <input type="password" id="confirmPassword" placeholder="Repite tu contraseña">
+                <span class="error-message" id="errorConfirmPassword">Las contraseñas no coinciden</span>
+                <span class="success-message" id="successConfirmPassword">Las contraseñas coinciden</span>
+            </div>
+
+            <div class="form-group">
+                <label for="edad">Edad *</label>
+                <input type="number" id="edad" placeholder="Ingresa tu edad">
+                <span class="error-message" id="errorEdad">Debes ser mayor de 18 años</span>
+                <span class="success-message" id="successEdad">Edad válida</span>
+            </div>
+
+            <div class="buttons">
+                <button type="submit" class="btn-submit" id="btnSubmit" disabled>Enviar Formulario</button>
+                <button type="reset" class="btn-reset" id="btnReset">Reiniciar</button>
+            </div>
+        </form>
+    </div>
+
+</body>
+
+</html>

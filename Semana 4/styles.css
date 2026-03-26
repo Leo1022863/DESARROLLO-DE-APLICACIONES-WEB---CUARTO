@@ -1,0 +1,157 @@
+/* Estilos Personalizados */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Sobrescribir botón primary de Bootstrap */
+.btn-primary {
+    background-color: #ff5733;
+    border-color: #ff5733;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #c70039;
+    border-color: #c70039;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(255, 87, 51, 0.4);
+}
+
+/* Estilos para las cards */
+.card {
+    transition: all 0.4s ease;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    height: 100%;
+}
+
+.card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+}
+
+.card img {
+    border-radius: 15px 15px 0 0;
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Animación para el header */
+.main-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 80px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.main-header h1 {
+    animation: fadeInDown 1s ease;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Navbar personalizada */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover {
+    transform: scale(1.1);
+}
+
+/* Formulario */
+.form-control {
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #ff5733;
+    box-shadow: 0 0 0 0.2rem rgba(255, 87, 51, 0.25);
+    transform: scale(1.02);
+}
+
+/* Footer */
+footer {
+    margin-top: 50px;
+    padding: 30px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+footer a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+    transition: all 0.3s ease;
+}
+
+footer a:hover {
+    color: #ff5733;
+    transform: scale(1.1);
+    display: inline-block;
+}
+
+/* Sección de contenido colapsable */
+.collapse-section {
+    margin: 30px 0;
+}
+
+/* Media Query para pantallas pequeñas */
+@media (max-width: 768px) {
+    .main-header {
+        padding: 50px 0;
+    }
+
+    .main-header h1 {
+        font-size: 2rem;
+    }
+
+    .card {
+        margin-bottom: 20px;
+    }
+
+    .btn-primary {
+        background-color: #3498db;
+        border-color: #3498db;
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+        border-color: #2980b9;
+    }
+}
+
+/* Animaciones adicionales */
+.fade-in {
+    animation: fadeIn 1.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

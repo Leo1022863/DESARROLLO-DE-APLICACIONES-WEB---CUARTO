@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Página Profesional</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body> 
+    <!-- Navbar Responsiva -->
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">Mi Primera web</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#inicio">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#servicios">Servicios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contacto">Contacto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Principal -->
+    <header class="main-header" id="inicio">
+        <div class="container">
+            <h1>Bienvenido a Mi Sitio Web </h1>
+            <p class="lead">Diseño moderno, responsivo y con estilo</p>
+        </div>
+    </header>
+
+    <!-- Sección de Servicios con Grid -->
+    <section id="servicios" class="container my-5 fade-in">
+        <h2 class="text-center mb-5">Nuestros Servicios</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="/Semana 4/assets/img/DesWeb.jpg" class="card-img-top img-fluid" alt="Diseño Web">
+                    <div class="card-body">
+                        <h3 class="card-title">Diseño Web</h3>
+                        <p class="card-text">Creamos sitios web modernos, atractivos y completamente responsivos que se adaptan a cualquier dispositivo.</p>
+                        <center><button class="btn btn-primary">Saber más</button></center>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="/Semana 4/assets/img/desmo.png" class="card-img-top img-fluid" alt="Desarrollo">
+                    <div class="card-body">
+                        <h3 class="card-title">Desarrollo</h3>
+                        <p class="card-text">Desarrollamos aplicaciones web robustas con las últimas tecnologías y mejores prácticas del mercado.</p>
+                        <center><button class="btn btn-primary">Saber más</button></center>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="/Semana 4/assets/img/marketing.png" class="card-img-top img-fluid" alt="Marketing">
+                    <div class="card-body">
+                        <h3 class="card-title">Marketing Digital</h3>
+                        <p class="card-text">Estrategias efectivas de marketing digital para hacer crecer tu negocio en el mundo online.</p>
+                        <center><button class="btn btn-primary">Saber más</button></center>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección con Collapse -->
+    <section class="container collapse-section">
+        <div class="text-center">
+            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInfo">
+                Ver más información
+            </button>
+        </div>
+        <div class="collapse mt-3" id="collapseInfo">
+            <div class="card card-body">
+                <h4>Información Adicional</h4>
+                <p>Somos un equipo de profesionales apasionados por la tecnología y el diseño. Con más de 10 años de experiencia, hemos ayudado a cientos de empresas a establecer su presencia digital de manera efectiva.</p>
+                <p>Nuestro enfoque se basa en entender las necesidades únicas de cada cliente y ofrecer soluciones personalizadas que generen resultados medibles.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulario de Contacto -->
+    <section id="contacto" class="container my-5">
+        <h2 class="text-center mb-4">Contáctanos</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <form>
+                    <div class="form-group mb-3">
+                        <label for="nombre" class="form-label">Nombre Completo</label>
+                        <input type="text" class="form-control" id="nombre" placeholder="Ingresa tu nombre">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="email" class="form-label">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="email" placeholder="tu@email.com">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="comentarios" class="form-label">Comentarios</label>
+                        <textarea class="form-control" id="comentarios" rows="5" placeholder="Escribe tu mensaje aquí..."></textarea>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">Enviar Mensaje</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+   
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

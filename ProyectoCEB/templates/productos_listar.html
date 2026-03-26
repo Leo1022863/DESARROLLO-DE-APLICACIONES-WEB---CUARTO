@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %} Pagina de productos {% endblock %}
+
+{% block content %}
+    <h2>Listado de productos</h2>
+    <a href="{% url 'productos_crear' %}" class="btn btn-primary">Crear nuevo producto</a>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.id }}</td>
+                <td>{{ producto.nombre }}</td>
+                <td>{{ producto.precio }}</td>
+                <td>{{ producto.stock }}</td>
+                <td>
+                    <a href="{% url 'productos_editar' producto.id %}" class="btn btn-sm
+                    
+     

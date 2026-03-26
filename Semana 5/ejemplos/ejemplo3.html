@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Elementos del DOM</title>
+</head>
+
+<body>
+    <div id="contenedor">
+        <h1>Título principal</h1>
+    </div>
+    <button id="crear">Crear Elemento</button>
+
+    <script>
+        document.getElementById("crear").addEventListener("click", () => {
+            // Crear un nuevo elemento (párrafo)
+            const nuevoParrafo = document.createElement("p");
+            nuevoParrafo.innerText = "Este es un párrafo nuevo.";
+            // Establecer estilos al nuevo elemento
+            nuevoParrafo.style.color = "blue";
+            nuevoParrafo.style.fontSize = "16px";
+            // Agregar el párrafo al contenedor
+            const contenedor = document.getElementById("contenedor");
+            contenedor.appendChild(nuevoParrafo);
+            // Crear un botón adicional
+            const nuevoBoton = document.createElement("button");
+            nuevoBoton.innerText = "Botón dinámico";
+            nuevoBoton.style.marginTop = "10px";
+            // Agregar funcionalidad al botón
+            nuevoBoton.addEventListener("click", () => {
+                alert("¡Hiciste clic en el botón dinámico!");
+            });
+            // Agregar el botón al contenedor
+            contenedor.appendChild(nuevoBoton);
+        });
+    </script>
+</body>
+
+</html>
