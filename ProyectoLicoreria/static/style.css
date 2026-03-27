@@ -373,3 +373,18 @@ footer {
   border: 1px solid rgba(201, 168, 76, 0.4);
   color: #c9a84c;
 }
+
+.user-info {
+    color: #ffd700; /* Un color dorado para que combine con tu temática de licorería */
+    margin-right: 15px;
+    font-size: 0.9rem;
+}
+
+
+.btn-logout {
+    background-color: #c0392b;
+    color: white !important;
+    padding: 5px 12px;
+    border-radius: 4px;
+    margin-left: 10px;
+}

@@ -9,6 +9,8 @@ import io
 from flask import Response
 from flask import Flask, render_template, redirect, url_for, flash, request, Response
 from flask import request # Permite importar los archivos JSON
+from conexion.conexion import get_db_connection
+from flask import render_template, redirect, url_for, flash, session
 
 app = Flask(__name__)
 app.secret_key = 'licoreria2025'
@@ -18,6 +20,28 @@ app.config['WTF_CSRF_CHECK_DEFAULT'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///licoreria.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+# ────────────────────────────────────────────
+# CONEXION A LA BASE DE DATOS EXTERNA MYSQL
+# ────────────────────────────────────────────
+
+
+@app.route('/probar_conexion')
+def probar_conexion():
+    db = get_db_connection()
+    if db:
+        cursor = db.cursor()
+        cursor.execute("SELECT nombre FROM categoria")
+        categorias = cursor.fetchall()
+        cursor.close()
+        db.close()
+        return f"¡Conexión exitosa! Encontré {len(categorias)} categorías en MySQL."
+    else:
+        return "Error al conectar con la base de datos."
+
+
+
+
 
 # ────────────────────────────────────────────
 # POO - MODELO PRODUCTO
@@ -151,6 +175,7 @@ class Usuario(db.Model):
     usuario  = db.Column(db.String(50),  nullable=False, unique=True)
     password = db.Column(db.String(200), nullable=False)
     rol      = db.Column(db.String(20),  nullable=False, default='empleado')
+    ventas_realizadas = db.relationship('Venta', backref='vendedor', lazy=True)
 
     def __init__(self, nombre, usuario, password, rol='empleado'):
         self.nombre   = nombre
@@ -180,8 +205,8 @@ class Usuario(db.Model):
 class Cliente(db.Model):
     __tablename__ = 'clientes'
 
-    id        = db.Column(db.Integer, primary_key=True)
-    nombre    = db.Column(db.String(100), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
     cedula    = db.Column(db.String(20),  nullable=False, unique=True)
     telefono  = db.Column(db.String(20),  nullable=True)
     email     = db.Column(db.String(100), nullable=True)
@@ -261,12 +286,14 @@ class Venta(db.Model):
     __tablename__ = 'ventas'
 
     id         = db.Column(db.Integer, primary_key=True)
-    fecha      = db.Column(db.DateTime, nullable=False)
-    total      = db.Column(db.Float,    nullable=False, default=0.0)
+    fecha = db.Column(db.DateTime, default=db.func.current_timestamp())
+    total = db.Column(db.Float, nullable=False)
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
 
     # Relación con detalle
     detalles = db.relationship('DetalleVenta', backref='venta', lazy=True, cascade="all, delete-orphan")
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
 
     def __init__(self, fecha, cliente_id, total=0.0):
         self.fecha      = fecha
@@ -690,14 +717,41 @@ def reportes():
                            agrupado=agrupado,
                            info=INFO_NEGOCIO)
 
-# ── Login ──
+
+# ── Login  ──
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        flash('✅ Sesión iniciada correctamente', 'success')
-        return redirect(url_for('inicio'))
+        # 1. Buscamos al usuario por el nombre de usuario ingresado
+        usuario_db = Usuario.query.filter_by(usuario=form.usuario.data).first()
+
+        # 2. Verificamos que el usuario exista y la contraseña coincida
+        # Nota: Si usas hashes (recomendado), usa check_password_hash
+        if usuario_db and usuario_db.password == form.password.data:
+            
+            # 3. Guardamos los datos en la sesión de Flask
+            session['user_id'] = usuario_db.id
+            session['user_nombre'] = usuario_db.nombre
+            session['user_rol'] = usuario_db.rol  # Útil para permisos
+
+            flash(f'✅ Bienvenido de nuevo, {usuario_db.nombre}', 'success')
+            return redirect(url_for('inicio'))
+        
+        else:
+            # Si los datos no coinciden, avisamos al usuario
+            flash('❌ Usuario o contraseña incorrectos', 'danger')
+
     return render_template('login.html', form=form)
+
+
+# ── Logout (Recomendado añadirlo de una vez) ──
+@app.route('/logout')
+def logout():
+    session.clear() # Limpia toda la información de la sesión
+    flash('Has cerrado sesión correctamente', 'info')
+    return redirect(url_for('login'))
+
 
 # ── Registro ──
 @app.route('/registro', methods=['GET', 'POST'])
