@@ -1,20 +1,13 @@
-import mysql.connector
-from mysql.connector import Error
+# conexion/conexion.py
+from flask_sqlalchemy import SQLAlchemy
 
-def get_db_connection():
-    try:
-        # Estas líneas deben tener un espacio (Tab) a la derecha
-        connection = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='',  
-            database='licoreria_db',
-            port=3306
-        )
-        if connection.is_connected():
-            return connection
-            
-    except Error as e:
-        # Esta línea también debe tener un espacio a la derecha
-        print(f"Error al conectar a MySQL: {e}")
-        return None
+# Creamos el objeto db aquí para que sea global
+db = SQLAlchemy()
+
+def configurar_db(app):
+    # Usamos los mismos datos que ya pusiste, pero en formato URI para SQLAlchemy
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/licoreria_db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Inicializamos la conexión
+    db.init_app(app)

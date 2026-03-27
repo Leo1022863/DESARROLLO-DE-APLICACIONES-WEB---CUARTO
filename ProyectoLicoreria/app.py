@@ -9,17 +9,27 @@ import io
 from flask import Response
 from flask import Flask, render_template, redirect, url_for, flash, request, Response
 from flask import request # Permite importar los archivos JSON
-from conexion.conexion import get_db_connection
 from flask import render_template, redirect, url_for, flash, session
+from conexion.conexion import db, configurar_db
+
+
 
 app = Flask(__name__)
-app.secret_key = 'licoreria2025'
-app.config['WTF_CSRF_CHECK_DEFAULT'] = False
+configurar_db(app) # Esto activa la conexión de tu carpeta nueva
+
+app.config['SECRET_KEY'] = 'licoreria2026_segura'
+#app = Flask(__name__)
+#app.secret_key = 'licoreria2025'
+#app.config['WTF_CSRF_CHECK_DEFAULT'] = False
 
 # ── CONEXIÓN SQLITE ──
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///licoreria.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+#--app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///licoreria.db' --#
+
+# Ahora (MySQL):
+# Así debe quedar si tu usuario root no tiene clave:
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/licoreria_db'
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#db = SQLAlchemy(app)
 
 # ────────────────────────────────────────────
 # CONEXION A LA BASE DE DATOS EXTERNA MYSQL
@@ -170,7 +180,7 @@ class Categoria(db.Model):
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
 
-    id       = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     nombre   = db.Column(db.String(100), nullable=False)
     usuario  = db.Column(db.String(50),  nullable=False, unique=True)
     password = db.Column(db.String(200), nullable=False)
@@ -285,19 +295,20 @@ class Proveedor(db.Model):
 class Venta(db.Model):
     __tablename__ = 'ventas'
 
-    id         = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.DateTime, default=db.func.current_timestamp())
-    total = db.Column(db.Float, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.DateTime)
+    total = db.Column(db.Float)
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
 
     # Relación con detalle
     detalles = db.relationship('DetalleVenta', backref='venta', lazy=True, cascade="all, delete-orphan")
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    
 
-    def __init__(self, fecha, cliente_id, total=0.0):
-        self.fecha      = fecha
+    def __init__(self, fecha, cliente_id, usuario_id, total=0.0):
+        self.fecha = fecha
         self.cliente_id = cliente_id
+        self.usuario_id = usuario_id 
         self.total      = total
 
     def get_total(self):  return self.total
@@ -310,11 +321,12 @@ class Venta(db.Model):
 
     def to_dict(self):
         return {
-            'id':         self.id,
-            'fecha':      self.fecha.strftime('%Y-%m-%d %H:%M'),
-            'total':      self.total,
-            'cliente_id': self.cliente_id
-        }
+        'id': self.id,
+        'fecha': self.fecha.strftime('%Y-%m-%d %H:%M'),
+        'total': self.total,
+        'cliente_id': self.cliente_id,
+        'usuario_id': self.usuario_id
+    }
 
     def __repr__(self):
         return f'<Venta {self.id} - ${self.total}>'
@@ -743,6 +755,15 @@ def login():
             flash('❌ Usuario o contraseña incorrectos', 'danger')
 
     return render_template('login.html', form=form)
+
+
+@app.route('/debug_users')
+def debug_users():
+    usuarios = Usuario.query.all()
+    # Esto imprimirá la lista de usuarios en tu consola/terminal
+    for u in usuarios:
+        print(f"Usuario: {u.usuario} | Password: {u.password}")
+    return "Revisa la terminal de VS Code"
 
 
 # ── Logout (Recomendado añadirlo de una vez) ──
