@@ -32,6 +32,20 @@
             <li><a href="{{ url_for('ver_datos') }}" 
                     class="{{ 'active' if request.endpoint == 'ver_datos' }}">Persistencia</a></li>
             
+            {% if current_user.is_authenticated %}
+            <li class="nav-item">
+                <span class="nav-link text-light">Hola, {{ current_user.nombre }}</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">Cerrar Sesión</a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('login') }}">Iniciar Sesión</a>
+            </li>
+            {% endif %}    
+
+
             {% if session.get('user_id') %}
                 <li class="user-info">
                     <span style="color: #ffd700; margin-left: 15px;">👤 {{ session['user_nombre'] }}</span>

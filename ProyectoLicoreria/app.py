@@ -1,29 +1,49 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from forms import ProductoForm, BuscarForm, LoginForm, RegistroForm
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash  # Libreria para Cifrar contraseñas
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 import os
 import json
 import csv
 import io
-from flask import Response
-from flask import Flask, render_template, redirect, url_for, flash, request, Response
-from flask import request # Permite importar los archivos JSON
-from flask import render_template, redirect, url_for, flash, session
+# app.py
+from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
+
+# 1. Importamos la conexión y el objeto db único
 from conexion.conexion import db, configurar_db
-# En app.py (líneas superiores)
-from forms import RegistroForm, LoginForm, ProductoForm, ClienteForm  # <-- Agrega ClienteForm aquí
-from sqlalchemy.exc import IntegrityError
 
+# 2. Inicializamos la App y configuramos la DB de inmediato
 app = Flask(__name__)
-configurar_db(app) # Esto activa la conexión de tu carpeta nueva
-
 app.config['SECRET_KEY'] = 'licoreria2026_segura'
+configurar_db(app)
+
+# 3. Importamos los modelos y formularios (Después de configurar_db)
+# Nota: Usuario y Cliente vienen de models.py, Producto y Categoria están abajo.
+from models import Usuario, Cliente 
+from forms import RegistroForm, LoginForm, ProductoForm, ClienteForm, BuscarForm
+
+# 4. CONFIGURACIÓN DE FLASK-LOGIN
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = "⚠️ Acceso restringido. Por favor inicia sesión."
+login_manager.login_message_category = "warning"
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    # Recupera al usuario de la base de datos por su ID
+    return Usuario.query.get(int(user_id))
+
 #app = Flask(__name__)
 #app.secret_key = 'licoreria2025'
 #app.config['WTF_CSRF_CHECK_DEFAULT'] = False
 
-# ── CONEXIÓN SQLITE ──
+# ────────────────────────────────────────────
+# CONEXION A LA BASE DE DATOS SQLITE
+# ────────────────────────────────────────────
 #--app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///licoreria.db' --#
 
 # Ahora (MySQL):
@@ -35,23 +55,6 @@ app.config['SECRET_KEY'] = 'licoreria2026_segura'
 # ────────────────────────────────────────────
 # CONEXION A LA BASE DE DATOS EXTERNA MYSQL
 # ────────────────────────────────────────────
-
-
-@app.route('/probar_conexion')
-def probar_conexion():
-    db = get_db_connection()
-    if db:
-        cursor = db.cursor()
-        cursor.execute("SELECT nombre FROM categoria")
-        categorias = cursor.fetchall()
-        cursor.close()
-        db.close()
-        return f"¡Conexión exitosa! Encontré {len(categorias)} categorías en MySQL."
-    else:
-        return "Error al conectar con la base de datos."
-
-
-
 
 
 # ────────────────────────────────────────────
@@ -175,77 +178,6 @@ class Categoria(db.Model):
         }
 
 
-# ════════════════════════════════════════════
-# MODELO - USUARIO
-# ════════════════════════════════════════════
-class Usuario(db.Model):
-    __tablename__ = 'usuarios' # Coincide con DBeaver
-
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    usuario = db.Column(db.String(100), unique=True, nullable=False) # Aquí se guarda el correo
-    password = db.Column(db.String(255), nullable=False)
-    rol = db.Column(db.String(20), default='vendedor')
-    
-    # Relación para escalabilidad futura
-    ventas_realizadas = db.relationship('Venta', backref='vendedor', lazy=True)
-
-    def __init__(self, nombre, usuario, password, rol='vendedor'):
-        self.nombre = nombre
-        self.usuario = usuario
-        self.password = password
-        self.rol = rol
-
-    # Métodos de utilidad corregidos
-    def get_nombre(self): return self.nombre
-    def get_usuario(self): return self.usuario
-    def get_rol(self): return self.rol
-    def es_admin(self): return self.rol == 'admin'
-
-    def __repr__(self):
-        return f'<Usuario {self.usuario}>'
-
-
-# ════════════════════════════════════════════
-# MODELO - CLIENTE
-# ════════════════════════════════════════════
-class Cliente(db.Model):
-    __tablename__ = 'clientes'
-
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    cedula    = db.Column(db.String(20),  nullable=False, unique=True)
-    telefono  = db.Column(db.String(20),  nullable=True)
-    email     = db.Column(db.String(100), nullable=True)
-    direccion = db.Column(db.String(200), nullable=True)
-
-    # Relación con ventas
-    ventas = db.relationship('Venta', backref='cliente', lazy=True)
-
-    def __init__(self, nombre, cedula, telefono=None, email=None, direccion=None):
-        self.nombre    = nombre
-        self.cedula    = cedula
-        self.telefono  = telefono
-        self.email     = email
-        self.direccion = direccion
-
-    def get_nombre(self):   return self.nombre
-    def get_cedula(self):   return self.cedula
-    def get_telefono(self): return self.telefono
-    def get_email(self):    return self.email
-
-    def to_dict(self):
-        return {
-            'id':        self.id,
-            'nombre':    self.nombre,
-            'cedula':    self.cedula,
-            'telefono':  self.telefono,
-            'email':     self.email,
-            'direccion': self.direccion
-        }
-
-    def __repr__(self):
-        return f'<Cliente {self.nombre}>'
 
 
 # ════════════════════════════════════════════
@@ -665,6 +597,7 @@ def inventario():
 
 # ── CREATE ──
 @app.route('/productos', methods=['GET', 'POST'])
+@login_required
 def productos():
     form = ProductoForm()
     if form.validate_on_submit():
@@ -752,34 +685,26 @@ def reportes():
 ## ── LOGIN UNIFICADO (Semana 13) ──
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Si el usuario ya está logueado, lo mandamos al inicio
+    if current_user.is_authenticated:
+        return redirect(url_for('inicio'))
+    
     form = LoginForm()
     if form.validate_on_submit():
-        # 1. Buscamos al usuario por el nombre de usuario ingresado en el formulario
-        # Importante: 'usuario' debe coincidir con el atributo de tu clase Usuario
-        usuario_db = Usuario.query.filter_by(usuario=form.usuario.data).first()
-
-        # 2. Verificamos que el usuario exista y la contraseña coincida
-        # Nota: En un proyecto real usaríamos generate_password_hash / check_password_hash
-        if usuario_db and usuario_db.password == form.password.data:
-            
-            # 3. Guardamos los datos en la sesión de Flask (session)
-            # Usamos los nombres de columna de tu tabla en DBeaver: id, nombre, rol
-            session['user_id'] = usuario_db.id
-            session['user_nombre'] = usuario_db.nombre
-            session['user_rol'] = usuario_db.rol
-            
-            # Opcional: Guardar el mail si lo necesitas para la interfaz
-            session['user_mail'] = usuario_db.mail 
-
-            flash(f'✅ Bienvenido de nuevo, {usuario_db.nombre}', 'success')
-            
-            # Redirigimos a la página principal (asegúrate que la ruta se llame 'index' o 'inicio')
-            return redirect(url_for('index')) 
+        # 1. Buscamos al usuario por su correo/usuario
+        user = Usuario.query.filter_by(usuario=form.usuario.data).first()
         
+        # 2. Verificamos: ¿Existe el usuario? y ¿La contraseña coincide con el Hash?
+        if user and check_password_hash(user.password, form.password.data):
+            login_user(user) # <--- Aquí Flask-Login crea la sesión
+            flash(f'¡Bienvenido de nuevo, {user.nombre}!', 'success')
+            
+            # Si intentó entrar a una página protegida, lo mandamos allá
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('inicio'))
         else:
-            # Si los datos no coinciden, avisamos al usuario
-            flash('❌ Usuario o contraseña incorrectos', 'danger')
-
+            flash('Usuario o contraseña incorrectos', 'danger')
+            
     return render_template('login.html', form=form)
 
 
@@ -792,39 +717,37 @@ def debug_users():
     return "Revisa la terminal de VS Code"
 
 
-# ── Logout (Recomendado añadirlo de una vez) ──
+# ── Logout ( añadirlo de una vez) ──
 @app.route('/logout')
+@login_required # Solo alguien logueado puede desloguearse
 def logout():
-    session.clear() # Limpia toda la información de la sesión
-    flash('Has cerrado sesión correctamente', 'info')
+    logout_user()
+    flash('Has cerrado sesión correctamente. ¡Vuelve pronto!', 'info')
     return redirect(url_for('login'))
-
 
 # ── Registro ──
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     form = RegistroForm()
     if form.validate_on_submit():
-        # Creamos el nuevo usuario con los datos del formulario unificado
-        # Se asigna el valor seleccionado en la lista desplegable al atributo 'rol'
+        # Ciframos la contraseña antes de guardarla
+        hashed_password = generate_password_hash(form.password.data)
+        
         nuevo_usuario = Usuario(
             nombre=form.nombre.data,
-            usuario=form.usuario.data,  # El correo electrónico se guarda en la columna 'usuario'
-            password=form.password.data,
-            rol=form.rol.data           # Captura 'vendedor' o 'administrador'
+            usuario=form.usuario.data,
+            password=hashed_password, # <--- Guardamos el hash, no la clave real
+            rol=form.rol.data
         )
         
         try:
             db.session.add(nuevo_usuario)
             db.session.commit()
-            # Si el registro es exitoso, se refleja en la tabla 'usuarios' de DBeaver
-            flash('✅ Usuario registrado exitosamente como ' + form.rol.data, 'success')
+            flash('✅ Registro exitoso. ¡Ahora puedes iniciar sesión!', 'success')
             return redirect(url_for('login'))
         except Exception as e:
             db.session.rollback()
-            # Útil para depuración en la terminal de VS Code
-            print(f"Error en el registro: {e}") 
-            flash('❌ Error: El correo electrónico ya se encuentra registrado.', 'danger')
+            flash('❌ El correo ya está registrado.', 'danger')
             
     return render_template('registro.html', form=form)
 
