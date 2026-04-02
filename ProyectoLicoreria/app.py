@@ -11,8 +11,9 @@ from flask import Flask, render_template, redirect, url_for, flash, request, Res
 from flask import request # Permite importar los archivos JSON
 from flask import render_template, redirect, url_for, flash, session
 from conexion.conexion import db, configurar_db
-
-
+# En app.py (líneas superiores)
+from forms import RegistroForm, LoginForm, ProductoForm, ClienteForm  # <-- Agrega ClienteForm aquí
+from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
 configurar_db(app) # Esto activa la conexión de tu carpeta nueva
@@ -178,32 +179,28 @@ class Categoria(db.Model):
 # MODELO - USUARIO
 # ════════════════════════════════════════════
 class Usuario(db.Model):
-    __tablename__ = 'usuarios'
+    __tablename__ = 'usuarios' # Coincide con DBeaver
 
     id = db.Column(db.Integer, primary_key=True)
-    nombre   = db.Column(db.String(100), nullable=False)
-    usuario  = db.Column(db.String(50),  nullable=False, unique=True)
-    password = db.Column(db.String(200), nullable=False)
-    rol      = db.Column(db.String(20),  nullable=False, default='empleado')
+    nombre = db.Column(db.String(100), nullable=False)
+    usuario = db.Column(db.String(100), unique=True, nullable=False) # Aquí se guarda el correo
+    password = db.Column(db.String(255), nullable=False)
+    rol = db.Column(db.String(20), default='vendedor')
+    
+    # Relación para escalabilidad futura
     ventas_realizadas = db.relationship('Venta', backref='vendedor', lazy=True)
 
-    def __init__(self, nombre, usuario, password, rol='empleado'):
-        self.nombre   = nombre
-        self.usuario  = usuario
+    def __init__(self, nombre, usuario, password, rol='vendedor'):
+        self.nombre = nombre
+        self.usuario = usuario
         self.password = password
-        self.rol      = rol
+        self.rol = rol
 
-    def get_nombre(self):
-        return self.nombre
-
-    def get_usuario(self):
-        return self.usuario
-
-    def get_rol(self):
-        return self.rol
-
-    def es_admin(self):
-        return self.rol == 'admin'
+    # Métodos de utilidad corregidos
+    def get_nombre(self): return self.nombre
+    def get_usuario(self): return self.usuario
+    def get_rol(self): return self.rol
+    def es_admin(self): return self.rol == 'admin'
 
     def __repr__(self):
         return f'<Usuario {self.usuario}>'
@@ -569,22 +566,44 @@ def clientes():
     lista = Cliente.query.all()
     total = len(lista)
     return render_template('clientes.html', clientes=lista, total=total)
-# ── Agregar cliente ──
+# ── Agregar cliente (Ruta Unificada) ──
 @app.route('/clientes/agregar', methods=['GET', 'POST'])
 def agregar_cliente():
-    if request.method == 'POST':
-        nuevo = Cliente(
-            nombre    = request.form['nombre'],
-            cedula    = request.form['cedula'],
-            telefono  = request.form.get('telefono', ''),
-            email     = request.form.get('email', ''),
-            direccion = request.form.get('direccion', '')
+    form = ClienteForm()
+    
+    if form.validate_on_submit():
+        # Los datos pasaron las reglas de forms.py
+        nuevo_cliente = Cliente(
+            nombre=form.nombre.data,
+            cedula=form.cedula.data,
+            telefono=form.telefono.data,
+            email=form.email.data,
+            direccion=form.direccion.data
         )
-        db.session.add(nuevo)
-        db.session.commit()
-        flash('✅ Cliente agregado correctamente', 'success')
-        return redirect(url_for('clientes'))
-    return render_template('agregar_cliente.html')
+        
+        try:
+            db.session.add(nuevo_cliente)
+            db.session.commit()
+            flash('✅ Cliente guardado exitosamente en el sistema.', 'success')
+            return redirect(url_for('clientes')) # <--- Asegúrate que este nombre sea igual al 'def'
+            
+        except IntegrityError:
+            db.session.rollback()
+            # Este error ocurre si la cédula ya existe en DBeaver
+            flash('❌ Error de Auditoría: La cédula ya está registrada para otro cliente.', 'danger')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error inesperado: {str(e)}', 'danger')
+    
+    # ── DETECCIÓN DE ERRORES DE VALIDACIÓN ──
+    # Si el formulario NO es válido, esto nos dirá por qué en la terminal y en la web
+    if form.errors:
+        print(f"Errores encontrados: {form.errors}") # Revisa tu terminal de VS Code
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error en el campo {getattr(form, field).label.text}: {error}", 'warning')
+
+    return render_template('agregar_cliente.html', form=form)
 
 # ── Editar cliente ──
 @app.route('/clientes/editar/<int:id>', methods=['GET', 'POST'])
@@ -730,25 +749,32 @@ def reportes():
                            info=INFO_NEGOCIO)
 
 
-# ── Login  ──
+## ── LOGIN UNIFICADO (Semana 13) ──
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        # 1. Buscamos al usuario por el nombre de usuario ingresado
+        # 1. Buscamos al usuario por el nombre de usuario ingresado en el formulario
+        # Importante: 'usuario' debe coincidir con el atributo de tu clase Usuario
         usuario_db = Usuario.query.filter_by(usuario=form.usuario.data).first()
 
         # 2. Verificamos que el usuario exista y la contraseña coincida
-        # Nota: Si usas hashes (recomendado), usa check_password_hash
+        # Nota: En un proyecto real usaríamos generate_password_hash / check_password_hash
         if usuario_db and usuario_db.password == form.password.data:
             
-            # 3. Guardamos los datos en la sesión de Flask
+            # 3. Guardamos los datos en la sesión de Flask (session)
+            # Usamos los nombres de columna de tu tabla en DBeaver: id, nombre, rol
             session['user_id'] = usuario_db.id
             session['user_nombre'] = usuario_db.nombre
-            session['user_rol'] = usuario_db.rol  # Útil para permisos
+            session['user_rol'] = usuario_db.rol
+            
+            # Opcional: Guardar el mail si lo necesitas para la interfaz
+            session['user_mail'] = usuario_db.mail 
 
             flash(f'✅ Bienvenido de nuevo, {usuario_db.nombre}', 'success')
-            return redirect(url_for('inicio'))
+            
+            # Redirigimos a la página principal (asegúrate que la ruta se llame 'index' o 'inicio')
+            return redirect(url_for('index')) 
         
         else:
             # Si los datos no coinciden, avisamos al usuario
@@ -779,8 +805,27 @@ def logout():
 def registro():
     form = RegistroForm()
     if form.validate_on_submit():
-        flash('✅ Usuario registrado correctamente', 'success')
-        return redirect(url_for('login'))
+        # Creamos el nuevo usuario con los datos del formulario unificado
+        # Se asigna el valor seleccionado en la lista desplegable al atributo 'rol'
+        nuevo_usuario = Usuario(
+            nombre=form.nombre.data,
+            usuario=form.usuario.data,  # El correo electrónico se guarda en la columna 'usuario'
+            password=form.password.data,
+            rol=form.rol.data           # Captura 'vendedor' o 'administrador'
+        )
+        
+        try:
+            db.session.add(nuevo_usuario)
+            db.session.commit()
+            # Si el registro es exitoso, se refleja en la tabla 'usuarios' de DBeaver
+            flash('✅ Usuario registrado exitosamente como ' + form.rol.data, 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            # Útil para depuración en la terminal de VS Code
+            print(f"Error en el registro: {e}") 
+            flash('❌ Error: El correo electrónico ya se encuentra registrado.', 'danger')
+            
     return render_template('registro.html', form=form)
 
 

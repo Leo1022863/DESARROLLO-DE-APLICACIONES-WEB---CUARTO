@@ -7,43 +7,59 @@
   <p>Registra un nuevo cliente en el sistema</p>
 </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 <div class="form-card">
   <form method="POST" novalidate>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-    <div class="form-group">
-      <label>Nombre completo</label>
-      <input type="text" name="nombre" class="form-control"
-             placeholder="Ej: Juan Pérez" required>
+    {{ form.hidden_tag() }} <div class="form-group">
+      {{ form.nombre.label }}
+      {{ form.nombre(class="form-control", placeholder="Ej: Juan Pérez") }}
+      {% for error in form.nombre.errors %}
+        <span class="text-danger small">{{ error }}</span>
+      {% endfor %}
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label>Cédula</label>
-        <input type="text" name="cedula" class="form-control"
-               placeholder="Ej: 1234567890" required>
+        {{ form.cedula.label }}
+        {{ form.cedula(class="form-control", placeholder="Ej: 1710749875") }}
+        {% for error in form.cedula.errors %}
+          <span class="text-danger small">{{ error }}</span>
+        {% endfor %}
       </div>
       <div class="form-group">
-        <label>Teléfono</label>
-        <input type="text" name="telefono" class="form-control"
-               placeholder="Ej: 099-000-0000">
+        {{ form.telefono.label }}
+        {{ form.telefono(class="form-control", placeholder="Ej: 0981225806") }}
+        {% for error in form.telefono.errors %}
+          <span class="text-danger small">{{ error }}</span>
+        {% endfor %}
       </div>
     </div>
 
     <div class="form-group">
-      <label>Email</label>
-      <input type="email" name="email" class="form-control"
-             placeholder="Ej: juan@email.com">
+      {{ form.email.label }}
+      {{ form.email(class="form-control", placeholder="Ej: juan@email.com") }}
+      {% for error in form.email.errors %}
+        <span class="text-danger small">{{ error }}</span>
+      {% endfor %}
     </div>
 
     <div class="form-group">
-      <label>Dirección</label>
-      <input type="text" name="direccion" class="form-control"
-             placeholder="Ej: Av. Principal 123, Quito">
+      {{ form.direccion.label }}
+      {{ form.direccion(class="form-control", placeholder="Ej: Av. Principal 123, Quito") }}
+      {% for error in form.direccion.errors %}
+        <span class="text-danger small">{{ error }}</span>
+      {% endfor %}
     </div>
 
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+      {{ form.submit(class="btn btn-primary") }}
       <a href="{{ url_for('clientes') }}" class="btn">Cancelar</a>
     </div>
   </form>
