@@ -14,6 +14,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 # 1. Importamos la conexión y el objeto db único
 from conexion.conexion import db, configurar_db
 
+
 # 2. Inicializamos la App y configuramos la DB de inmediato
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'licoreria2026_segura'
@@ -494,6 +495,7 @@ def agrupar_por_categoria():
 
 # ── Listar clientes ──
 @app.route('/clientes')
+@login_required  # <--- Protege esta ruta para que solo usuarios logueados puedan verla
 def clientes():
     lista = Cliente.query.all()
     total = len(lista)
@@ -580,6 +582,7 @@ inventario_obj = Inventario()
 
 # ── READ ──
 @app.route('/inventario', methods=['GET', 'POST'])
+@login_required  # <--- Protege esta ruta para que solo usuarios logueados puedan verla
 def inventario():
     form = BuscarForm()
     inventario_obj.cargar_desde_db()
@@ -673,6 +676,7 @@ def eliminar(id):
 
 # ── Reportes ──
 @app.route('/reportes')
+@login_required  # <--- Protege esta ruta para que solo usuarios logueados puedan verla
 def reportes():
     resumen  = obtener_resumen_inventario()
     agrupado = agrupar_por_categoria()
@@ -697,13 +701,13 @@ def login():
         # 2. Verificamos: ¿Existe el usuario? y ¿La contraseña coincide con el Hash?
         if user and check_password_hash(user.password, form.password.data):
             login_user(user) # <--- Aquí Flask-Login crea la sesión
-            flash(f'¡Bienvenido de nuevo, {user.nombre}!', 'success')
+            flash(f'✅ ¡Bienvenido de nuevo, {user.nombre}!', 'success')
             
             # Si intentó entrar a una página protegida, lo mandamos allá
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('inicio'))
         else:
-            flash('Usuario o contraseña incorrectos', 'danger')
+            flash('❌ Usuario o contraseña incorrectos', 'danger')
             
     return render_template('login.html', form=form)
 
@@ -722,7 +726,7 @@ def debug_users():
 @login_required # Solo alguien logueado puede desloguearse
 def logout():
     logout_user()
-    flash('Has cerrado sesión correctamente. ¡Vuelve pronto!', 'info')
+    flash(' ✅ Has cerrado sesión correctamente. ¡Vuelve pronto!', 'info')
     return redirect(url_for('login'))
 
 # ── Registro ──
