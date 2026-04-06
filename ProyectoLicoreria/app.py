@@ -751,6 +751,7 @@ def ver_reportes():
     except Exception as e:
         # En caso de error, lo imprimimos para depurar en la terminal
         print(f"Error cargando reportes: {e}")
+        print(f"Ventas encontradas: {len(ventas_db)}")
         return "Hubo un problema al cargar los datos.", 500
 
 if __name__ == '__main__':
