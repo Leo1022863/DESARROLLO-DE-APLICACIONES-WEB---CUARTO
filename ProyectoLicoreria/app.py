@@ -1,42 +1,56 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from werkzeug.security import generate_password_hash, check_password_hash  # Libreria para Cifrar contraseñas
-from sqlalchemy.exc import IntegrityError
-from datetime import datetime
+# app.py
 import os
 import json
 import csv
 import io
-# app.py
+from datetime import datetime
+
+
+# En app.py, reemplaza tu importación de modelos por esta:
+from models import Usuario, Cliente, Producto, Categoria, Venta, DetalleVenta
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.exc import IntegrityError
 
 # 1. Importamos la conexión y el objeto db único
 from conexion.conexion import db, configurar_db
-
 
 # 2. Inicializamos la App y configuramos la DB de inmediato
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'licoreria2026_segura'
 configurar_db(app)
 
-# 3. Importamos los modelos y formularios (Después de configurar_db)
-# Nota: Usuario y Cliente vienen de models.py, Producto y Categoria están abajo.
-from models import Usuario, Cliente 
-from forms import RegistroForm, LoginForm, ProductoForm, ClienteForm, BuscarForm
+# 3. Importamos los modelos y formularios (DESPUÉS de configurar_db para evitar ImportErrors)
+from models import Usuario, Cliente
+from forms import RegistroForm, LoginForm, ProductoForm, ClienteForm, BuscarForm, VentaForm
 
-# 4. CONFIGURACIÓN DE FLASK-LOGIN
+# 4. Importamos el Servicio (Asegúrate de que la carpeta se llame 'services')
+from services.inventario_service import Inventario
+
+# 5. CONFIGURACIÓN DE FLASK-LOGIN
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = "⚠️ Acceso restringido. Por favor inicia sesión."
 login_manager.login_message_category = "warning"
 
-
 @login_manager.user_loader
 def load_user(user_id):
-    # Recupera al usuario de la base de datos por su ID
     return Usuario.query.get(int(user_id))
+
+# 6. INSTANCIA GLOBAL DEL SERVICIO
+inventario_obj = Inventario()
+
+# 7. CARGA INICIAL DE DATOS (Soluciona el 'Working outside of application context')
+with app.app_context():
+    try:
+        # Sincroniza la colección en memoria con MySQL
+        inventario_obj.cargar_desde_db()
+        print("✅ Inventario sincronizado correctamente con la base de datos.")
+    except Exception as e:
+        print(f"⚠️ Error en carga inicial del inventario: {e}")
 
 #app = Flask(__name__)
 #app.secret_key = 'licoreria2025'
@@ -57,367 +71,6 @@ def load_user(user_id):
 # CONEXION A LA BASE DE DATOS EXTERNA MYSQL
 # ────────────────────────────────────────────
 
-
-# ────────────────────────────────────────────
-# POO - MODELO PRODUCTO
-# ────────────────────────────────────────────
-
-class Producto(db.Model):
-    __tablename__ = 'productos'
-
-    # ── ATRIBUTOS ──
-    id        = db.Column(db.Integer, primary_key=True)
-    nombre    = db.Column(db.String(100), nullable=False)
-    categoria = db.Column(db.String(50),  nullable=False)
-    marca     = db.Column(db.String(50),  nullable=False)
-    precio    = db.Column(db.Float,       nullable=False)
-    stock     = db.Column(db.Integer,     nullable=False)
-
-    # ── CONSTRUCTOR ──
-    def __init__(self, nombre, categoria, marca, precio, stock):
-        self.nombre    = nombre
-        self.categoria = categoria
-        self.marca     = marca
-        self.set_precio(precio)   # usa setter para validar
-        self.set_stock(stock)     # usa setter para validar
-
-    # ── GETTERS (obtener atributos) ──
-    def get_id(self):
-        return self.id
-
-    def get_nombre(self):
-        return self.nombre
-
-    def get_categoria(self):
-        return self.categoria
-
-    def get_marca(self):
-        return self.marca
-
-    def get_precio(self):
-        return self.precio
-
-    def get_stock(self):
-        return self.stock
-
-    # ── SETTERS (establecer y validar atributos) ──
-    def set_nombre(self, nombre):
-        if len(nombre) < 2:
-            raise ValueError('El nombre debe tener al menos 2 caracteres')
-        self.nombre = nombre
-
-    def set_categoria(self, categoria):
-        categorias_validas = ('Whisky', 'Ron', 'Cerveza', 'Vino', 'Vodka', 'Otros')
-        if categoria not in categorias_validas:
-            raise ValueError(f'Categoría no válida: {categoria}')
-        self.categoria = categoria
-
-    def set_marca(self, marca):
-        if len(marca) < 2:
-            raise ValueError('La marca debe tener al menos 2 caracteres')
-        self.marca = marca
-
-    def set_precio(self, precio):
-        if precio <= 0:
-            raise ValueError('El precio debe ser mayor a 0')
-        self.precio = round(precio, 2)
-
-    def set_stock(self, stock):
-        if stock < 0:
-            raise ValueError('El stock no puede ser negativo')
-        self.stock = stock
-
-    # ── MÉTODOS ADICIONALES ──
-    def __repr__(self):
-        return f'<Producto {self.nombre}>'
-
-    def to_dict(self):
-        return {
-            'id':        self.get_id(),
-            'nombre':    self.get_nombre(),
-            'categoria': self.get_categoria(),
-            'marca':     self.get_marca(),
-            'precio':    self.get_precio(),
-            'stock':     self.get_stock()
-        }
-
-    def estado_stock(self):
-        stock = self.get_stock()
-        if stock == 0:
-            return 'Agotado'
-        elif stock < 5:
-            return 'Bajo'
-        else:
-            return 'Disponible'
-
-    def aplicar_descuento(self, porcentaje):
-        if 0 < porcentaje < 100:
-            descuento = self.precio * (porcentaje / 100)
-            return round(self.precio - descuento, 2)
-        raise ValueError('El porcentaje debe estar entre 1 y 99')
-        
-
-# ════════════════════════════════════════════
-# MODELO - CATEGORÍA
-# ════════════════════════════════════════════
-class Categoria(db.Model):
-    __tablename__ = 'categorias'
-
-    id     = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(50), nullable=False, unique=True)
-
-    def __init__(self, nombre):
-        self.nombre = nombre
-
-    def __repr__(self):
-        return f'<Categoria {self.nombre}>'
-
-    def to_dict(self):
-        return {
-            'id':     self.id,
-            'nombre': self.nombre
-        }
-
-
-
-
-# ════════════════════════════════════════════
-# MODELO - PROVEEDOR
-# ════════════════════════════════════════════
-class Proveedor(db.Model):
-    __tablename__ = 'proveedores'
-
-    id       = db.Column(db.Integer, primary_key=True)
-    nombre   = db.Column(db.String(100), nullable=False)
-    contacto = db.Column(db.String(100), nullable=True)
-    telefono = db.Column(db.String(20),  nullable=True)
-    email    = db.Column(db.String(100), nullable=True)
-    productos_str = db.Column(db.String(200), nullable=True)
-
-    def __init__(self, nombre, contacto=None, telefono=None, email=None, productos_str=None):
-        self.nombre       = nombre
-        self.contacto     = contacto
-        self.telefono     = telefono
-        self.email        = email
-        self.productos_str = productos_str
-
-    def get_nombre(self):   return self.nombre
-    def get_contacto(self): return self.contacto
-    def get_telefono(self): return self.telefono
-
-    def to_dict(self):
-        return {
-            'id':        self.id,
-            'nombre':    self.nombre,
-            'contacto':  self.contacto,
-            'telefono':  self.telefono,
-            'email':     self.email,
-            'productos': self.productos_str
-        }
-
-    def __repr__(self):
-        return f'<Proveedor {self.nombre}>'
-
-
-# ════════════════════════════════════════════
-# MODELO - VENTA
-# ════════════════════════════════════════════
-class Venta(db.Model):
-    __tablename__ = 'ventas'
-
-    id = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.DateTime)
-    total = db.Column(db.Float)
-    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-
-    # Relación con detalle
-    detalles = db.relationship('DetalleVenta', backref='venta', lazy=True, cascade="all, delete-orphan")
-    
-
-    def __init__(self, fecha, cliente_id, usuario_id, total=0.0):
-        self.fecha = fecha
-        self.cliente_id = cliente_id
-        self.usuario_id = usuario_id 
-        self.total      = total
-
-    def get_total(self):  return self.total
-    def get_fecha(self):  return self.fecha
-
-    def calcular_total(self):
-        """Calcula el total sumando los detalles"""
-        self.total = sum(d.subtotal for d in self.detalles)
-        return self.total
-
-    def to_dict(self):
-        return {
-        'id': self.id,
-        'fecha': self.fecha.strftime('%Y-%m-%d %H:%M'),
-        'total': self.total,
-        'cliente_id': self.cliente_id,
-        'usuario_id': self.usuario_id
-    }
-
-    def __repr__(self):
-        return f'<Venta {self.id} - ${self.total}>'
-
-
-# ════════════════════════════════════════════
-# MODELO - DETALLE VENTA
-# ════════════════════════════════════════════
-class DetalleVenta(db.Model):
-    __tablename__ = 'detalle_venta'
-
-    id          = db.Column(db.Integer, primary_key=True)
-    venta_id = db.Column(db.Integer, db.ForeignKey('ventas.id'), nullable=False)
-    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
-    cantidad    = db.Column(db.Integer, nullable=False)
-    precio_unit = db.Column(db.Float,   nullable=False)
-    subtotal    = db.Column(db.Float,   nullable=False)
-
-    producto = db.relationship('Producto')
-
-    def __init__(self, venta_id, producto_id, cantidad, precio_unit):
-        self.venta_id    = venta_id
-        self.producto_id = producto_id
-        self.cantidad    = cantidad
-        self.precio_unit = precio_unit
-        self.subtotal    = round(cantidad * precio_unit, 2)
-
-    def get_subtotal(self):   return self.subtotal
-    def get_cantidad(self):   return self.cantidad
-
-    def to_dict(self):
-        return {
-            'id':          self.id,
-            'producto_id': self.producto_id,
-            'cantidad':    self.cantidad,
-            'precio_unit': self.precio_unit,
-            'subtotal':    self.subtotal
-        }
-
-    def __repr__(self):
-        return f'<DetalleVenta producto={self.producto_id} cantidad={self.cantidad}>'
-
-
-
-# ════════════════════════════════════════════
-# CLASE INVENTARIO (POO + Colecciones)
-# ════════════════════════════════════════════
-class Inventario:
-    def __init__(self):
-        self._productos = {}           # Diccionario principal {id: producto}
-        self._nombres_index = {}       # Diccionario índice {nombre_lower: id}
-        self._categorias_index = {}    # Diccionario índice {categoria: [ids]}
-        self._ids_set = set()          # Conjunto de IDs registrados
-
-    def cargar_desde_db(self):
-        productos = Producto.query.all()
-        self._productos = {}
-        self._nombres_index = {}
-        self._categorias_index = {}
-        self._ids_set = set()
-
-        for p in productos:
-            d = p.to_dict()
-            d['estado'] = p.estado_stock()
-            self._productos[p.id] = d
-
-            # Índice por nombre (búsqueda rápida)
-            self._nombres_index[p.nombre.lower()] = p.id
-
-            # Índice por categoría
-            if p.categoria not in self._categorias_index:
-                self._categorias_index[p.categoria] = []
-            self._categorias_index[p.categoria].append(p.id)
-
-            # Conjunto de IDs
-            self._ids_set.add(p.id)
-
-        return self._productos
-
-    def agregar_producto(self, producto):
-        d = producto.to_dict()
-        d['estado'] = producto.estado_stock()
-        self._productos[producto.id] = d
-        self._nombres_index[producto.nombre.lower()] = producto.id
-        self._ids_set.add(producto.id)
-
-        if producto.categoria not in self._categorias_index:
-            self._categorias_index[producto.categoria] = []
-        self._categorias_index[producto.categoria].append(producto.id)
-
-    def eliminar_producto(self, id):
-        if id in self._ids_set:                          # búsqueda O(1) con conjunto
-            p = self._productos[id]
-            # Limpiar índices
-            self._nombres_index.pop(p['nombre'].lower(), None)
-            self._categorias_index.get(p['categoria'], []).remove(id)
-            del self._productos[id]
-            self._ids_set.discard(id)
-            return True
-        return False
-
-    def actualizar_producto(self, id, cantidad=None, precio=None):
-        if id not in self._ids_set:                      # búsqueda O(1) con conjunto
-            return False
-        if cantidad is not None:
-            if cantidad < 0:
-                raise ValueError('La cantidad no puede ser negativa')
-            self._productos[id]['stock'] = cantidad
-        if precio is not None:
-            if precio <= 0:
-                raise ValueError('El precio debe ser mayor a 0')
-            self._productos[id]['precio'] = round(precio, 2)
-        return True
-
-    def buscar_por_nombre(self, nombre):
-        """Búsqueda parcial usando lista por comprensión"""
-        nombre = nombre.lower()
-        return [p for p in self._productos.values()
-                if nombre in p['nombre'].lower()
-                or nombre in p['marca'].lower()]
-
-    def buscar_por_id(self, id):
-        """Búsqueda directa O(1) usando diccionario"""
-        return self._productos.get(id, None)
-
-    def buscar_por_categoria(self, categoria):
-        """Búsqueda usando índice de categorías"""
-        ids = self._categorias_index.get(categoria, [])
-        return [self._productos[id] for id in ids if id in self._productos]
-
-    def mostrar_todos(self):
-        return list(self._productos.values())
-
-    def total_productos(self):
-        return len(self._ids_set)                        # O(1) con conjunto
-
-    def existe_id(self, id):
-        """Verifica si un ID existe — O(1) con conjunto"""
-        return id in self._ids_set
-
-    def get_categorias_activas(self):
-        """Retorna conjunto de categorías en uso"""
-        return set(self._categorias_index.keys())
-
-    def get_ids_registrados(self):
-        """Retorna copia del conjunto de IDs"""
-        return self._ids_set.copy()
-
-    def productos_agotados(self):
-        return [p for p in self._productos.values() if p['stock'] == 0]
-
-    def productos_stock_bajo(self):
-        return [p for p in self._productos.values() if 0 < p['stock'] < 5]
-
-    def precios_como_lista(self):
-        """Retorna lista de precios para cálculos"""
-        return [p['precio'] for p in self._productos.values()]
-
-    def precio_promedio(self):
-        precios = self.precios_como_lista()
-        return round(sum(precios) / len(precios), 2) if precios else 0
 
 # ════════════════════════════════════════════
 # COLECCIONES PARA GESTIÓN DEL INVENTARIO
@@ -577,25 +230,27 @@ def about():
 
 
 
-# Instancia global del inventario
-inventario_obj = Inventario()
-
-# ── READ ──
+# ── SECCIÓN INVENTARIO (Semana 15) ──
 @app.route('/inventario', methods=['GET', 'POST'])
-@login_required  # <--- Protege esta ruta para que solo usuarios logueados puedan verla
+@login_required
 def inventario():
     form = BuscarForm()
+    
+    # Sincronizamos con MySQL antes de mostrar
     inventario_obj.cargar_desde_db()
 
-    if form.validate_on_submit():
-        productos = inventario_obj.buscar_por_nombre(form.busqueda.data)
+    if form.validate_on_submit() and form.busqueda.data:
+        # Llamada exacta al método del servicio
+        productos_lista = inventario_obj.buscar_por_nombre(form.busqueda.data)
     else:
-        productos = inventario_obj.mostrar_todos()
+        # Llamada exacta al método del servicio
+        productos_lista = inventario_obj.mostrar_todos()
 
     total = inventario_obj.total_productos()
-    return render_template('inventario.html',
-                           productos=productos,
-                           total=total,
+    
+    return render_template('inventario.html', 
+                           productos=productos_lista, 
+                           total=total, 
                            form=form)
 
 # ── CREATE ──
@@ -981,5 +636,124 @@ def importar_txt():
     return redirect(url_for('inventario'))
 
 
+
+# ──REGISTRAR VENTA──
+
+@app.route('/ventas/nueva', methods=['GET', 'POST'])
+@login_required
+def nueva_venta():
+    """Registra una venta usando los campos exactos de la tabla detalle_venta"""
+    form = VentaForm()
+    # Cargar opciones para los SelectField
+    form.cliente_id.choices = [(c.id, f"{c.nombre} ({c.cedula})") for c in Cliente.query.all()]
+    form.producto_id.choices = [(p.id, f"{p.nombre} - ${p.precio}") for p in Producto.query.all()]
+
+    if form.validate_on_submit():
+        producto = Producto.query.get(form.producto_id.data)
+        cantidad_vendida = form.cantidad.data
+        
+        # 1. Validar stock en el servicio de inventario (memoria)
+        if inventario_obj.validar_y_descontar(producto.id, cantidad_vendida):
+            try:
+                # Calcular total y subtotal
+                valor_subtotal = producto.precio * cantidad_vendida
+                
+                # 2. Crear encabezado de Venta
+                nueva_v = Venta(
+                    fecha=datetime.now(), 
+                    cliente_id=form.cliente_id.data, 
+                    usuario_id=current_user.id, 
+                    total=valor_subtotal
+                )
+                db.session.add(nueva_v)
+                db.session.flush() # Obtener ID de venta para el detalle
+
+                # 3. Crear DetalleVenta con los campos de tu imagen:
+                # id (auto), venta_id, producto_id, cantidad, precio_unit, subtotal
+                detalle = DetalleVenta(
+                    venta_id=nueva_v.id,
+                    producto_id=producto.id,
+                    cantidad=cantidad_vendida,
+                    precio_unit=producto.precio, # Nombre exacto según tu imagen
+                    subtotal=valor_subtotal       # Nombre exacto según tu imagen
+                )
+                
+                # 4. Actualizar stock físico en MySQL
+                producto.set_stock(producto.stock - cantidad_vendida)
+                
+                db.session.add(detalle)
+                db.session.commit()
+                
+                flash('✅ Venta procesada exitosamente', 'success')
+                return redirect(url_for('inventario'))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'❌ Error al guardar en DB: {str(e)}', 'danger')
+        else:
+            flash('⚠️ No hay suficiente stock disponible', 'warning')
+
+    return render_template('registrar_venta.html', form=form)
+
+
+
+    #-- CUANTO SE VENDIO--
+@app.route('/reportes')
+@login_required
+def ver_reportes():
+    """
+    Genera el reporte de inventario y recupera el historial de ventas 
+    utilizando una consulta moderna para evitar advertencias de consola.
+    """
+    try:
+        # --- SECCIÓN: DATOS DE INVENTARIO ---
+        # Obtenemos todos los productos para las estadísticas superiores
+        productos_all = Producto.query.all()
+        
+        resumen = {
+            'total_productos': len(productos_all),
+            'precio_promedio': round(sum(p.precio for p in productos_all) / len(productos_all), 2) if productos_all else 0,
+            'stock_total': sum(p.stock for p in productos_all),
+            'productos_agotados': [p.nombre for p in productos_all if p.stock == 0],
+            'productos_bajos': [p.nombre for p in productos_all if 0 < p.stock <= 5]
+        }
+
+        # Agrupamos productos por categoría para las tablas detalladas
+        agrupado = {}
+        for p in productos_all:
+            cat = p.categoria or "Sin Categoría"
+            if cat not in agrupado:
+                agrupado[cat] = []
+            agrupado[cat].append(p)
+
+        # --- SECCIÓN: HISTORIAL DE VENTAS (SOLUCIÓN) ---
+        # Realizamos un JOIN explícito para evitar que la tabla aparezca vacía.
+        # Usamos labels para asegurar que Jinja2 identifique los nombres correctamente.
+        ventas_db = db.session.query(
+            Venta.id,
+            Venta.fecha,
+            Venta.total,
+            Cliente.nombre.label('cliente_nombre'),
+            Usuario.username.label('vendedor_nombre')
+        ).join(Cliente, Venta.cliente_id == Cliente.id)\
+         .join(Usuario, Venta.usuario_id == Usuario.id)\
+         .order_by(Venta.fecha.desc()).all()
+
+        # Enviamos 'ventas_detalladas' con los resultados de la base de datos
+        return render_template(
+            'reportes.html', 
+            info=INFO_NEGOCIO, 
+            resumen=resumen, 
+            agrupado=agrupado,
+            ventas_detalladas=ventas_db 
+        )
+
+    except Exception as e:
+        # En caso de error, lo imprimimos para depurar en la terminal
+        print(f"Error cargando reportes: {e}")
+        return "Hubo un problema al cargar los datos.", 500
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">🛒 Nueva Venta - Licorería</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+
+                <div class="mb-3">
+                    <label class="form-label">Seleccionar Cliente</label>
+                    {{ form.cliente_id(class="form-select") }}
+                    {% for error in form.cliente_id.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Seleccionar Producto</label>
+                    {{ form.producto_id(class="form-select") }}
+                    {% for error in form.producto_id.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Cantidad a Vender</label>
+                    {{ form.cantidad(class="form-control", placeholder="Ej: 2") }}
+                    {% for error in form.cantidad.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="d-grid gap-2">
+                    {{ form.submit(class="btn btn-success btn-lg") }}
+                    <a href="{{ url_for('inventario') }}" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

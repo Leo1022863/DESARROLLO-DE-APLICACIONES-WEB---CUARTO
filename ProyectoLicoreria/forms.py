@@ -91,3 +91,12 @@ class ClienteForm(FlaskForm):
                            validators=[DataRequired(message='La dirección es obligatoria')])
     
     submit = SubmitField('Guardar Cliente')
+
+
+# En forms.py
+class VentaForm(FlaskForm):
+    # Cambia 'id_cliente' por 'cliente_id' para que coincida con app.py
+    cliente_id = SelectField('Seleccionar Cliente', coerce=int, validators=[DataRequired()])
+    producto_id = SelectField('Seleccionar Producto', coerce=int, validators=[DataRequired()])
+    cantidad = IntegerField('Cantidad', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Registrar Venta 💸')

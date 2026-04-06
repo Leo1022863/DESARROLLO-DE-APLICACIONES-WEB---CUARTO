@@ -3,87 +3,113 @@
 
 {% block content %}
 <div class="page-header">
-  <h1>📊 Reportes</h1>
-  <p>{{ info.nombre }} — {{ info.ciudad }}</p>
+    <h1>📊 Panel de Reportes e Historial</h1>
+    <p>{{ info.nombre }} — {{ info.ciudad }}</p>
 </div>
 
-<!-- Tarjetas resumen (diccionario) -->
 <div class="cards-grid" style="margin-bottom:2rem;">
-  <div class="card">
-    <div class="card-icon">📦</div>
-    <h3>Total Productos</h3>
-    <p style="font-size:2rem; color:#c9a84c; margin:0">{{ resumen.total_productos }}</p>
-  </div>
-  <div class="card">
-    <div class="card-icon">💰</div>
-    <h3>Precio Promedio</h3>
-    <p style="font-size:2rem; color:#c9a84c; margin:0">${{ resumen.precio_promedio }}</p>
-  </div>
-  <div class="card">
-    <div class="card-icon">📈</div>
-    <h3>Stock Total</h3>
-    <p style="font-size:2rem; color:#c9a84c; margin:0">{{ resumen.stock_total }}</p>
-  </div>
+    <div class="card">
+        <div class="card-icon">📦</div>
+        <h3>Total Productos</h3>
+        <p style="font-size:2rem; color:#c9a84c; margin:0">{{ resumen.total_productos }}</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">💰</div>
+        <h3>Precio Promedio</h3>
+        <p style="font-size:2rem; color:#c9a84c; margin:0">${{ resumen.precio_promedio }}</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">📈</div>
+        <h3>Stock Total</h3>
+        <p style="font-size:2rem; color:#c9a84c; margin:0">{{ resumen.stock_total }}</p>
+    </div>
 </div>
 
-<!-- Alertas (listas) -->
 {% if resumen.productos_agotados %}
 <div class="alert alert-danger" style="margin-bottom:1rem;">
-  🚨 Productos agotados: {{ resumen.productos_agotados | join(', ') }}
+    🚨 <strong>Productos agotados:</strong> {{ resumen.productos_agotados | join(', ') }}
 </div>
 {% endif %}
 
 {% if resumen.productos_bajos %}
 <div class="alert alert-warning" style="margin-bottom:1.5rem;">
-  ⚠️ Stock bajo: {{ resumen.productos_bajos | join(', ') }}
+    ⚠️ <strong>Stock bajo:</strong> {{ resumen.productos_bajos | join(', ') }}
 </div>
 {% endif %}
 
-<!-- Agrupado por categoría (diccionario + listas) -->
-<div class="table-container">
-  {% if agrupado %}
-    {% for categoria, productos in agrupado.items() %}
-    <h3 style="color:#c9a84c; margin-bottom:0.8rem;">🍷 {{ categoria }}</h3>
-    <table class="tabla" style="margin-bottom:1.5rem;">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Marca</th>
-          <th>Precio</th>
-          <th>Stock</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in productos %}
-        <tr>
-          <td>{{ p.nombre }}</td>
-          <td>{{ p.marca }}</td>
-          <td>${{ "%.2f"|format(p.precio) }}</td>
-          <td>{{ p.stock }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
+<div class="table-container" style="margin-bottom:3rem;">
+    <h2 style="color:#c9a84c;">💸 Historial de Ventas Recientes</h2>
+    {% if ventas_detalladas %}
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>ID Venta</th>
+                <th>Fecha y Hora</th>
+                <th>Cliente</th>
+                <th>Vendedor</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in ventas_detalladas %}
+            <tr>
+                <td>#{{ v.id }}</td>
+                <td>{{ v.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ v.cliente_nombre if v.cliente_nombre else 'Cliente General' }}</td>
+                <td><small>{{ v.vendedor_nombre }}</small></td>
+                <td style="color:#c9a84c;"><strong>${{ "%.2f"|format(v.total) }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
-    {% endfor %}
-  {% else %}
-    <p class="empty-msg">No hay productos registrados aún.</p>
-  {% endif %}
+    {% else %}
+    <p class="empty-msg">No se han encontrado registros de ventas en la base de datos.</p>
+    {% endif %}
 </div>
 
-<!-- Conjuntos: categorías y marcas en uso -->
+<div class="table-container">
+    <h2 style="color:#c9a84c; margin-bottom:1.5rem;">🍷 Inventario por Categoría</h2>
+    {% if agrupado %}
+        {% for categoria, productos in agrupado.items() %}
+        <h3 style="color:#c9a84c; margin-bottom:0.8rem; border-bottom: 1px solid #333;">{{ categoria }}</h3>
+        <table class="tabla" style="margin-bottom:2rem;">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Marca</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in productos %}
+                <tr>
+                    <td>{{ p.nombre }}</td>
+                    <td>{{ p.marca }}</td>
+                    <td>${{ "%.2f"|format(p.precio) }}</td>
+                    <td>{{ p.stock }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    {% else %}
+        <p class="empty-msg">No hay productos para agrupar.</p>
+    {% endif %}
+</div>
+
 <div class="form-row" style="margin-top:1.5rem; gap:1rem;">
-  <div class="form-card">
-    <h3 style="color:#c9a84c; margin-bottom:1rem;">📂 Categorías en uso</h3>
-    {% for cat in resumen.categorias_en_uso %}
-      <span class="badge badge-success" style="margin:4px;">{{ cat }}</span>
-    {% endfor %}
-  </div>
-  <div class="form-card">
-    <h3 style="color:#c9a84c; margin-bottom:1rem;">🏷️ Marcas en uso</h3>
-    {% for marca in resumen.marcas_en_uso %}
-      <span class="badge badge-warning" style="margin:4px;">{{ marca }}</span>
-    {% endfor %}
-  </div>
+    <div class="form-card">
+        <h3 style="color:#c9a84c; margin-bottom:1rem;">📂 Categorías Activas</h3>
+        {% for cat in resumen.categorias_en_uso %}
+            <span class="badge badge-success" style="margin:4px; padding: 8px 12px;">{{ cat }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-card">
+        <h3 style="color:#c9a84c; margin-bottom:1rem;">🏷️ Marcas en Catálogo</h3>
+        {% for marca in resumen.marcas_en_uso %}
+            <span class="badge badge-warning" style="margin:4px; padding: 8px 12px;">{{ marca }}</span>
+        {% endfor %}
+    </div>
 </div>
-
 {% endblock %}
